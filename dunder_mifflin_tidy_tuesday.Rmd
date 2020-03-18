@@ -1,0 +1,75 @@
+---
+title: "The_Office"
+author: "Olivia Smithson"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+##install.packages("schrute")
+library(tidyverse)
+library(schrute)
+library(tibble)
+library(dplyr)
+library(ggplot2)
+##read in the data
+office_data <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-17/office_ratings.csv')
+
+##view the data
+office_data
+
+##schrute package 
+schrute_data <- schrute::theoffice
+```
+
+## R Markdown
+
+
+```{r}
+##number of lines per character
+View(schrute_data)
+
+##just the character names we want (main characters)
+main_names <- c("Michael", "Dwight", "Jim", "Pam", "Angela", "Andy", "Kevin", "Toby", "Creed")
+
+##save as new dataset
+character_lines <- schrute_data %>%
+  ##assign one bar for each character, for each season
+  group_by(character, season) %>%
+  ##total the number of lines
+  count(text) %>%
+  mutate(number_of_lines = sum(n)) %>% 
+  ##filter in our main characters
+  filter(character %in% main_names)
+
+##print character_lines
+character_lines
+
+```
+
+```{r}
+##now, to plot the data with all our desired variables
+
+ggplot(character_lines, aes(x = character, y = number_of_lines, fill = season)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  ##make it circular
+  coord_polar() +
+  ##set a limit to encompass all data
+  ylim(c(0,2150)) +
+  ##labels are unnecessary on x and y axis with circular barplot
+  xlab("") +
+  ylab("") +
+  labs(title = "Who Is The True Main Character of The Office?",
+       subtitle = "We see into every character's story on The Office, but who has the most lines?") +
+  theme_minimal() -> talkative_office
+
+#save the image
+ggsave("dunder_mifflin.png", talkative_office,
+       height = 6, width = 8)
+  
+
+```
+
+
