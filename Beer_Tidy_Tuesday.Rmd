@@ -1,0 +1,84 @@
+---
+title: "Beer Tidy Tuesday"
+author: "Olivia Smithson" 
+date: "3/31/2020"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+## brewing_materials <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/brewing_materials.csv')
+## beer_taxed <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/beer_taxed.csv')
+## brewer_size <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/brewer_size.csv')
+beer_states <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/beer_states.csv')
+
+##install.packages("maps")
+library(tidyverse)
+library(usmap)
+theme_set(theme_minimal())
+
+
+```
+
+```{r}
+##Wrangling the data
+
+
+beer_states %>%
+  ##keeping it simple by just looking at bottles and cans in 2019 
+  filter(year == "2019") %>%
+  filter(type == "Bottles and Cans") %>%
+  ##create new column called compare_barrels
+  ##set low, medium, and high amounts but type carefully - DO NOT use commas in the thousandths place!
+  ##these are eye-balled values, and could easily be adjusted to convey different results!
+  mutate(compare_barrels = case_when(barrels <= 2000000.00 ~ "Low ( < 2 million)",
+                                    barrels > 2000000.00 & barrels <= 10000000.00 ~ "Medium",
+                                    barrels > 10000000.00 ~ "High ( > 10 million)")) %>%
+  ##remove "total" row because it skews the data
+  filter(barrels < 140000000.00) -> take_a_pitcher
+
+```
+
+```{r, fig.height=6, fig.width=13, collapse=TRUE}
+
+##Creating a bar plot
+take_a_pitcher %>%
+  ggplot(aes(x = state, y = barrels, fill = compare_barrels)) +
+  geom_bar(stat = "identity") +
+  ##fix labels
+  xlab("State") +
+  ylab("Barrels Produced") +
+  ylim(0, 13000000) -> clink
+
+##population size definitely plays a factor with how much higher some states' numbers are!
+```
+
+```{r, fig.height=6, fig.width=10, collapse=TRUE}
+##make a map 
+##use column with data you want to put on the map for "values = "
+plot_usmap(data = take_a_pitcher, values = "compare_barrels") +
+  ##clean up legend position and font sizes
+  theme(legend.position = "top",
+        plot.title = element_text(size = 20),
+        plot.subtitle = element_text(size = 16),
+        plot.caption = element_text(size = 11),
+        plot.background = element_rect(fill = "lavender")) +
+  labs(title = "These States Will Drink to That", 
+       subtitle = "2019 production of beer bottles/cans in the USA",
+       ##use \n\n for line breaks
+       caption = "Based on # barrels (1 barrel = 31 gallons)\n
+       Created by @SmithsonLiv\n ") +
+  ##add color scheme and legend title
+  scale_fill_manual(name = "Relative Production", values = c("khaki1", "darkseagreen", "mediumturquoise")) -> these_states_will_drink_to_that
+
+ggsave("beer_map.png", these_states_will_drink_to_that)
+
+## In this Tidy Tuesday, I learned how to plot data onto a map for the first time. I had issues with installing packages and libraries at first, but I utilized my troubleshooting skills and made it work. I also explored font sizes and background color for the first time, which I had been too scared to use in the past in fear of messing up my fundamentally "complete" plots. I worked on using my string function skills as well with \n\n line breaks. My biggest accomplishment with this plot though, was using case_when correctly, because that was one of my biggest obstacles in the past. 
+       
+  
+
+
+
+```
