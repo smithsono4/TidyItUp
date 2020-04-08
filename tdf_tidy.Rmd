@@ -1,0 +1,50 @@
+---
+title: "Tour_Tidy_Tuesday"
+author: "Olivia Smithson"
+date: "4/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+##Plan how you want to modify the plot, and select which packages to install
+#install.packages("ggplot2")
+#install.packages("gganimate")
+#install.packages("gifski")
+#install.packages("gapminder")
+##load in our libraries of choice and the dataset
+library(tidyverse)
+library(gganimate)
+tdf_winners <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-07/tdf_winners.csv')
+```
+
+```{r, fig.height=4, fig.width=9}
+tdf_winners %>%
+  ##some years don't have data for time_margin, so let's get rid of them
+  drop_na(time_margin) -> tdf
+  ##create a scatterplot of time_margin over the years
+  ggplot(tdf, aes(x = start_date, y = time_margin)) +
+  geom_point(col = "lightsalmon", size = 2) + 
+    ##clean up labels
+  xlab("Year") +
+  ylab("Time Margin (seconds)") +
+  ylim(-0.5, 4) +
+    ##dress up the plot
+  theme_minimal() +
+    ##add a title and subtitle
+    labs(title = "Competitive Much? Tour de France Cyclists Are!",
+         subtitle = "Decreased time gap between 1st and 2nd place shows an increase in competition over the years") +
+    ##add in animation component
+  transition_states(start_date, 
+                    transition_length = 1,
+                    state_length = 0.5) +
+    ##this next line ensures the animation spans the whole length of code
+    transition_time(start_date) +
+    ##this function keeps the points from disappearing after transition
+    shadow_mark(past = TRUE)
+  
+  anim_save("tdf_competitive.gif")
+
+  ##This week I learned how to use gganimate, which really adds a nice visual component to a dataset showing trends over time. I had to figure out why the animation wasn't spanning the whole dataset, which led to me using multiple functions from the gganimate package until I found one (transition_time) that suited my variables from the dataframe. I also practiced with drop_na because that's an incredibly useful tool in data interpretation. 
+
+```
