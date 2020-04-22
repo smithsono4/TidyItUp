@@ -77,6 +77,8 @@ final_gdpr %>%
 
 
 ggsave("gdpr_tidy_tuesday.png", gdpr_tidy_tuesday, width = 13, height = 7)
+
+##This week, I tackled my first Cleveland dot plot and learned to manipulate it using geom_segment. I also honed in on new data wrangling skills as I played around with the order of arguments and specifics needed for the Cleveland dot plot. As a fun extra, I also learned how to change the font to Roboto Condensed using "family = ". 
  
 ```
 
