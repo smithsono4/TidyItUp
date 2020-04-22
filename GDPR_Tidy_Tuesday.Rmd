@@ -1,0 +1,82 @@
+---
+title: "GDPR_Tidy_Tuesday"
+output: html_document
+author: "Oliva Smithson"
+date: "4/21/2020"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("tidyverse")
+#install.packages("hrbrthemes")
+library(tidyverse)
+library(hrbrthemes)
+
+
+##let's create a plot showing the type of violation with the associated fines for each
+gdpr_violations <- readr::read_tsv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-21/gdpr_violations.tsv')
+
+##disable scientific notation
+options(scipen = 999)
+
+```
+
+## R Markdown
+
+```{r, fig.height=7, fig.width=13}
+##remove the one problematic row with a URL instead of a type
+gdpr_violations[-c(89),] -> problematic
+
+
+##select the two columns of interest using the new df
+problematic %>%
+  select(price, type) %>%
+  ##rename some variables so they fit on the plot nicer/make more sense
+  mutate(type = str_replace_all(type, "Not known", "Unknown"),
+         type = str_replace_all(type, "Non-cooperation with Data Protection Authority", "Non-cooperation with DPA"),
+         type = str_replace_all(type, "Non-compliance with lawful basis for data processing and information obligation non-compliance", "Several"),
+         type = str_replace_all(type, "No data protection officer appointed", "Failure to appoint a data protection officer"),
+         type = str_replace_all(type, "Failure to implement sufficient measures to ensure information security and information obligation non-compliance", "Several")) %>%
+  ##filter out nonsensical rows such as "severa" and "unknown" because those do not contribute to the plot we are trying to make
+  filter(type != "Several") %>%
+  filter(type != "Unknown") %>%
+  ##isolate variable rows to avoid repeats
+  distinct() -> costly_violations
+
+
+##the segment needs two values, so let's create those using minimum and maximum prices 
+costly_violations %>%
+  group_by(type) %>%
+  summarise(min_price = min(price),
+            max_price = max(price),
+            price_span = max_price - min_price) -> final_gdpr
+
+
+##start making Cleveland dot plot
+final_gdpr %>%
+  ggplot(aes(x = type, y = price)) +
+  ##add segment line connecting two values
+  geom_segment(aes(x = type, xend = type, y = min_price, yend = max_price), color = "black") +
+  ##cap the segment off with two points
+  geom_point(aes(x = type, y = min_price), color = "mediumvioletred", size = 5) +
+  geom_point(aes(x = type, y = max_price), color = "khaki1", size = 5) +
+  ##flip the coordinates
+  coord_flip() +
+  ##must use Arial Narrow or Roboto Condensed font with theme_ipsum
+  theme_ipsum(base_family = "Roboto Condensed") +
+  ##get rid of the legend, add title and subtitle specifics, add color to plot background
+  theme(legend.position = "none",
+        plot.title = element_text(family = "Roboto Condensed", size = 18, face = "bold"),
+        plot.subtitle = element_text(family = "Roboto Condensed", size = 14), 
+        plot.background = element_rect(fill = "lightsteelblue2")) + 
+  ##clean up labels and add title and subtitle
+  labs(x = "Type of Violation",
+       y = "Price of Violation (Euros)",
+       title = "Costliest GDPR Violations",
+       subtitle = "Privacy legislation on data protection in the EU") -> gdpr_tidy_tuesday
+
+
+ggsave("gdpr_tidy_tuesday.png", gdpr_tidy_tuesday, width = 13, height = 7)
+ 
+```
+
