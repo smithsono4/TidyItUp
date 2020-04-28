@@ -1,0 +1,82 @@
+---
+title: "Broadway_Tidy_Tuesday"
+author: "Olivia Smithson"
+date: "04/28/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#install.packages("ggalluvial")
+library(tidyverse)
+library(ggalluvial)
+grosses <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/grosses.csv', guess_max = 40000)
+cpi <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/cpi.csv')
+pre_1985_starts <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/pre-1985-starts.csv')
+
+grosses$theatre <- as.factor(grosses$theatre)
+grosses$avg_ticket_price <- as.numeric(grosses$avg_ticket_price)
+```
+
+## R Markdown
+```{r, fig.width=8, fig.height=9, collapse=TRUE}
+##Pick Top 5 theatres since there are so many
+##Not my personal opinion - rankings taken from: https://www.vulture.com/2018/06/nycs-41-broadway-theaters-ranked.html
+main_theatres <- c("Richard Rodgers Theatre", "Vivian Beaumont Theater", "Music Box Theatre", "Studio 54", "Lyric Theatre")
+
+
+#Isolate theatre and ticket price variables
+grosses %>%
+  filter(theatre %in% main_theatres) %>%
+  select(theatre, avg_ticket_price) %>%
+  group_by(theatre) -> theatre_expenses
+
+
+#Categorize avg ticket prices using case_when
+theatre_expenses %>%
+  mutate(price_range = case_when(avg_ticket_price <=20.00 ~ "Under $20",
+                                 avg_ticket_price >20.00 & avg_ticket_price <=30.00 ~ "$20-$30",
+                                 avg_ticket_price >30.00 & avg_ticket_price <=40.00 ~ "$30-$40",
+                                 avg_ticket_price >40.00 & avg_ticket_price <=50.00 ~ "$40-$50",
+                                 avg_ticket_price >50.00 & avg_ticket_price <=60.00 ~ "$50-$60",
+                                 avg_ticket_price >60.00 & avg_ticket_price <=70.00 ~ "$60-$70",
+                                 avg_ticket_price >70.00 & avg_ticket_price <=80.00 ~ "$70-$80",
+                                 avg_ticket_price >80.00 & avg_ticket_price <=90.00 ~ "$80-$90",
+                                 avg_ticket_price >90.00 & avg_ticket_price <=100.00 ~ "$90-$100",
+                                 avg_ticket_price >100.00 ~ "Over $100")) -> prices_over_time
+
+##Determine order of prices on Sankey plot
+price_order <- factor(prices_over_time$price_range, levels = c("Over $100", "$90-$100", "$80-$90", "$70-$80", "$60-$70", "$50-$60", "$40-$50", "$30-$40", "$20-$30", "Under $20"))
+
+##Get frequencies to make plotting easier - not sure if there is another way to do it without frequency considering there are two variables on the x axis?
+prices_over_time %>%
+  group_by(theatre, price_range) %>%
+  ##create new column for frequencies called "freq"
+  mutate(freq = n()) %>%
+  data.frame() -> broadway_freq
+
+##Start plotting the Sankey plot!
+ggplot(broadway_freq, aes(axis1 = theatre, axis2 = price_order, y = freq)) +
+  ##include aspects of ggalluvial package 
+  geom_alluvium(aes(fill = theatre, width = 1/6)) +
+  ##fill strata with black color to make more distinguishable
+  geom_stratum(width = 1/6, fill = "black", color = "grey") +
+  geom_label(stat = "stratum", infer.label = TRUE) +
+  ##rename axis 1 and axis2
+  scale_x_discrete(limits = c("Theatre", "Price Range"), expand = c(0.1, 0.1)) +
+  ##establish theme and fix up labels
+  xlab("Theatre and Ticket Prices") +
+  ylab("Frequency") +
+  theme_classic() +
+  labs(title = "Broadway Ticket Price Ranges over Time",
+       subtitle = "Stratified by Top 5 Theatres") +
+  ##finishing touches
+  theme(legend.position = "none",
+        plot.title = element_text(size = 20, face = "bold"),
+        plot.subtitle = element_text(size = 16))
+  
+  
+###This week, I learned how to make a Sankey plot using the ggalluvial package. It certainly has room for improvement, but I think it conveys the wide variety of prices certain Broadway theatres have sold tickets for over time. One thing I would like to explore in the future is how to get rid of the spaces in between each flow line. It took a long time for the Rmd file to knit each time, so it was hard for me to change one thing and examine its output after a while.###
+
+
+```
