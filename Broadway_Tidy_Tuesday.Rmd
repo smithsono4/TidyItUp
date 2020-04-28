@@ -73,7 +73,9 @@ ggplot(broadway_freq, aes(axis1 = theatre, axis2 = price_order, y = freq)) +
   ##finishing touches
   theme(legend.position = "none",
         plot.title = element_text(size = 20, face = "bold"),
-        plot.subtitle = element_text(size = 16))
+        plot.subtitle = element_text(size = 16)) -> top_5_broadway
+
+ggsave("broadway.png", top_5_broadway)
   
   
 ###This week, I learned how to make a Sankey plot using the ggalluvial package. It certainly has room for improvement, but I think it conveys the wide variety of prices certain Broadway theatres have sold tickets for over time. One thing I would like to explore in the future is how to get rid of the spaces in between each flow line. It took a long time for the Rmd file to knit each time, so it was hard for me to change one thing and examine its output after a while.###
